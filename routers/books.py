@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from models import Book, Author
 from schemas import BookCreate, BookRead, BookUpdate
 from database import SessionLocal
@@ -26,10 +26,18 @@ def read_books(db: Session = Depends(get_db),
                author_id: Optional[int] = Query(None, description="Фильтрация по ID автора"),
                skip: int = Query(0, description="Количество пропусков при пагинации (смещение)"),
                limit: int = Query(10, description="Максимальное количество авторов для отображения")):
-    query = db.query(Book)
+    query = db.query(Book).join(Book.author)
     if author_id is not None:
         query = query.filter(Book.author_id == author_id)
-    return query.offset(skip).limit(limit).all()
+    books = query.offset(skip).limit(limit).all()
+    return [
+        {
+            "book_id": book.id,
+            "title": book.title,
+            "author_name": book.author.name
+        }
+        for book in books
+    ]
 
 
 @router.get("/books/{book_id}",
@@ -38,10 +46,14 @@ def read_books(db: Session = Depends(get_db),
 def read_book(book_id: int = Path(description="ID-книги"),
               db: Session = Depends(get_db)
               ):
-    book = db.query(Book).filter(Book.id == book_id).first()
+    book = db.query(Book).join(Book.author).filter(Book.id == book_id).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    return book
+    return {
+        "book_id": book.id,
+        "title": book.title,
+        "author_name": book.author.name
+    }
 
 
 @router.post("/books/",

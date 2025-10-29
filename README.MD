@@ -61,7 +61,7 @@
    ```
 2. Чтобы применить миграции:
     ```bash    
-   alembic upgrade head
+   alembic upgrade head 
    ```
 
 ---

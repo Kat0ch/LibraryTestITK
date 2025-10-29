@@ -39,8 +39,10 @@ class AuthorRead(AuthorBase):
         from_attributes = True
 
 
-class BookRead(BookBase):
-    id: int
+class BookRead(BaseModel):
+    book_id: int
+    title: str
+    author_name: str
 
     class Config:
         from_attributes = True
